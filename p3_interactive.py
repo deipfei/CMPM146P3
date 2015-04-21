@@ -33,11 +33,16 @@ source_point = None
 destination_point = None
 visited_boxes = []
 path = []
+pathboxes=[]
 
 def redraw():
 
   canvas.delete(Tkinter.ALL)
   canvas.create_image((0,0), anchor=Tkinter.NW, image=small_image)
+
+  for box in pathboxes:
+    x1,x2,y1,y2=shrink(box)
+    canvas.create_rectangle(y1,x1,y2,x2,width=2.0,outline='blue')
 
   for box in visited_boxes:
     x1,x2,y1,y2 = shrink(box)
@@ -47,6 +52,8 @@ def redraw():
     x1,y1 = shrink(segment[0])
     x2,y2 = shrink(segment[1])
     canvas.create_line(y1,x1,y2,x2,width=2.0,fill='red')
+
+  
 
   if source_point:
     x,y = shrink(source_point)
@@ -59,7 +66,7 @@ def redraw():
 
 def on_click(event):
 
-  global source_point, destination_point, visited_boxes, path
+  global source_point, destination_point, visited_boxes, path, pathboxes
 
   if source_point and destination_point:
 
@@ -67,6 +74,7 @@ def on_click(event):
     destination_point = None
     visited_boxes = []
     path = []
+    pathboxes=[]
 
   elif not source_point:
 
@@ -77,7 +85,7 @@ def on_click(event):
     destination_point = event.y*SUBSAMPLE, event.x*SUBSAMPLE
 
     try:
-      path, visited_boxes = p3_pathfinder.find_path(source_point, destination_point, mesh) 
+      path, visited_boxes, pathboxes = p3_pathfinder.find_path(source_point, destination_point, mesh) 
     except:
       destination_point = None
       traceback.print_exc()

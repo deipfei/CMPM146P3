@@ -21,7 +21,7 @@ def find_path(source, destination, mesh):
             destbox = box
 
     if sourcebox == destbox:
-        return [(source, destination)], [sourcebox], [sourcebox]
+        return [(source, destination)], [sourcebox]
 
     #Dijkstra's Algorithm/ANY SEARCH THINGY HERE
     dist = {}
@@ -34,7 +34,6 @@ def find_path(source, destination, mesh):
     standing_point = source
 
     path = []
-    pathboxes=[]
     while not priorityQ.empty():
         #print "I'm in an infinite loop!"
         current = priorityQ.get()
@@ -48,12 +47,13 @@ def find_path(source, destination, mesh):
                 end = prev[end]
 
             stand = source
-            for box in reversed(boxes):
+            print boxes
+            for box in boxes:
                 path.append((stand, find_point(stand, box)))
-                pathboxes.append(box)
                 stand = find_point(stand, box)
             path.append((stand, destination))
-            return path, visited, pathboxes
+            print path
+            return path, visited
 
         neighbors = mesh['adj'][current[1]]
         for n in neighbors:
@@ -94,7 +94,7 @@ def find_path(source, destination, mesh):
     path.append(((sx, sy), get_midpoint(end)))'''
 
     print "No path!"
-    return [], visited, []
+    return [], visited
 
 def get_distance(box1, box2):
     x1, y1, x2, y2 = box1
