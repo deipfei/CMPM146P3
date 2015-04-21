@@ -23,14 +23,20 @@ def find_path(source, destination, mesh):
     if sourcebox == destbox:
         return [(source, destination)], [sourcebox], [sourcebox]
 
-    #Dijkstra's Algorithm/ANY SEARCH THINGY HERE
-    dist = {}
-    prev = {}
-    dist[sourcebox] = 0
-    prev[sourcebox] = None
-    firstboxsource = (dist[sourcebox], sourcebox)
+    #A* Algorithm/ANY SEARCH THINGY HERE
+    distforward = {}
+    prevforward = {}
+    distbackward = {}
+    prevbackward = {}
+    distforward[sourcebox] = 0
+    prevforward[sourcebox] = None
+    distbackward[destbox] = 0
+    prevbackward[destbox] = None
+    firstboxsource = (distforward[sourcebox], sourcebox, 'destination')
+    destboxsource = (distbackward[destbox], destbox, 'start')
     priorityQ = PriorityQueue()
     priorityQ.put(firstboxsource)
+    priorityQ.put(destboxsource)
     standing_point = source
 
     path = []
@@ -39,31 +45,84 @@ def find_path(source, destination, mesh):
         #print "I'm in an infinite loop!"
         current = priorityQ.get()
         visited.append(current[1])
-        if current[1] == destbox:
-            end = current[1]
-            boxes = []
-            while end is not None:
-                boxes.append(end)
-                #print prev[end]
-                end = prev[end]
+        if current[2] == 'destination':
+            if current[1] in prevbackward:
+                end = current[1]
+                #boxes = []
+                forwardboxes = []
+                while end is not None:
+                    #boxes.append(end)
+                    forwardboxes.append(end)
+                    #print prev[end]
+                    end = prevforward[end]
+                stand = source
+                for b in reversed(forwardboxes):
+                    path.append((stand, find_point(stand, b)))
+                    pathboxes.append(b)
+                    stand = find_point(stand, b)
+                end = prevbackward[current[1]]
+                backwardboxes = []
+                while end is not None:
+                    backwardboxes.append(end)
+                    end = prevbackward[end]
+                stand = destination
+                for b in reversed(backwardboxes):
+                    path.append((stand, find_point(stand, b)))
+                    pathboxes.append(b)
+                    stand = find_point(stand, b)
+                #for box in reversed(boxes):
+                #path.append((stand, destination))
+                print path
+                return path, visited, pathboxes
 
-            stand = source
-            for box in reversed(boxes):
-                path.append((stand, find_point(stand, box)))
-                pathboxes.append(box)
-                stand = find_point(stand, box)
-            path.append((stand, destination))
-            return path, visited, pathboxes
+        if current[2] == 'start':
+            if current[1] in prevforward:
+                end = current[1]
+                #boxes = []
+                backwardboxes = []
+                while end is not None:
+                    #boxes.append(end)
+                    backwardboxes.append(end)
+                    #print prev[end]
+                    end = prevbackward[end]
+                stand = destination
+                for b in reversed(backwardboxes):
+                    path.append((stand, find_point(stand, b)))
+                    pathboxes.append(b)
+                    stand = find_point(stand, b)
+                end = prevforward[current[1]]
+                forwardboxes = []
+                while end is not None:
+                    forwardboxes.append(end)
+                    end = prevforward[end]
+                stand = source
+                for b in reversed(forwardboxes):
+                    path.append((stand, find_point(stand, b)))
+                    pathboxes.append(b)
+                    stand = find_point(stand, b)
+                #for box in reversed(boxes):
+                #path.append((stand, destination))
+                return path, visited, pathboxes
 
         neighbors = mesh['adj'][current[1]]
         for n in neighbors:
-            alt = dist[current[1]] + point_distance(standing_point, find_point(standing_point, current[1]))
-            if n not in dist or alt < dist[n]:
-                standing_point = find_point(standing_point, current[1])
-                dist[n] = alt
-                prior = alt + heuristic_basic(destbox, current[1])
-                priorityQ.put((prior, n))
-                prev[n] = current[1]
+            if current[2] == 'destination':
+                alt = distforward[current[1]] + point_distance(standing_point, find_point(standing_point, current[1]))
+                if n not in distforward or alt < distforward[n]:
+                    standing_point = find_point(standing_point, current[1])
+                    distforward[n] = alt
+                    prior = alt + heuristic_basic(destbox, n)
+                    priorityQ.put((prior, n, 'destination'))
+                    prevforward[n] = current[1]
+
+            if current[2] == 'start':
+                alt = distbackward[current[1]] + point_distance(standing_point, find_point(standing_point, current[1]))
+                if n not in distbackward or alt < distbackward[n]:
+                    standing_point = find_point(standing_point, current[1])
+                    distbackward[n] = alt
+                    prior = alt + heuristic_basic(sourcebox, n)
+                    priorityQ.put((prior, n, 'start'))
+                    prevbackward[n] = current[1]
 
     '''#breadth first search
     vertex = None
@@ -136,4 +195,4 @@ def point_distance(point1, point2):
 def heuristic_basic(boxa, boxb):
     x1, y1 = get_midpoint(boxa)
     x2, y2 = get_midpoint(boxb)
-    return abs(x1 - x2 ) + abs(y1-y2)
+    return abs(x1 - x2) + abs(y1-y2)
